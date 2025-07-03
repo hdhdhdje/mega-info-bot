@@ -1,46 +1,40 @@
 import logging
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 import re
-import aiohttp  # Асинхронний HTTP клієнт
+import aiohttp
 
-TOKEN = "тут_твій_токен"
+TOKEN = "ТУТ_ТВОЙ_ТОКЕН"
 
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO
 )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привіт! Надішли мені нікнейм або номер телефону, і я спробую знайти максимум інформації 🔍")
+    await update.message.reply_text("Привіт! Надішли мені нікнейм або номер телефону 🔍")
 
-def is_phone_number(text):
-    # Допускаємо + і від 7 до 15 цифр
-    return re.fullmatch(r'\+?\d{7,15}', text) is not None
+def is_phone_number(text: str) -> bool:
+    return re.match(r"^\+?[0-9]{7,15}$", text)
+
+async def search_by_username(username: str) -> str:
+    async with aiohttp.ClientSession() as session:
+        url = f"https://www.namecheckr.com/namecheckr/?username={username}"
+        async with session.get(url) as resp:
+            if resp.status == 200:
+                return f"✅ Можливо, такий нік існує. (Деталі в розробці)"
+            else:
+                return "⚠️ Не вдалося знайти інформацію."
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text.strip()
 
     if is_phone_number(query):
-        # Пошук по номеру телефону (поки заглушка)
-        await update.message.reply_text(f"🔢 Номер виглядає як: {query}\n(Пошук ще в розробці — буде більше)")
+        await update.message.reply_text(f"🔢 Виявлено номер: {query}\n(Пошук по телефону — в розробці)")
     else:
-        # Пошук по ніку
-        username = query
-        await update.message.reply_text(f"🔍 Шукаю профілі з нікнеймом: {username}\nЦе займе кілька секунд...")
-
-        url = f"https://www.namecheckr.com/namecheckr/?username={username}"
-
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as resp:
-                    if resp.status == 200:
-                        # Тут можна парсити html resp.text(), але поки просто повідомлення
-                        await update.message.reply_text("✅ Деякі сайти, де знайдено цей нік: (в розробці буде повноцінна видача)")
-                    else:
-                        await update.message.reply_text("⚠️ Не вдалося знайти дані.")
-        except Exception as e:
-            await update.message.reply_text(f"Сталася помилка при пошуку: {e}")
+        await update.message.reply_text(f"🔍 Шукаю профілі з нікнеймом: {query}")
+        result = await search_by_username(query)
+        await update.message.reply_text(result)
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(TOKEN).build()
