@@ -4,7 +4,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Con
 import re
 import aiohttp
 
-TOKEN = "ТУТ_ТВОЙ_ТОКЕН"
+TOKEN = "8174885258:AAF5HEkQQq7FkzQKmWFFIDUcwrGfe0bLT5w"
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
